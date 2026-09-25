@@ -5,8 +5,6 @@ import authenticate from '../middleware/authenticate.js';
 import { createToken } from '../auth/tokens.js';
 
 const router = Router();
-const findUser = database.prepare('SELECT id, username, password_hash FROM users WHERE username = ?');
-const createUser = database.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
 
 function sendSession(response, user) {
   response.json({ token: createToken(user.id), user: { id: user.id, username: user.username } });
@@ -25,10 +23,13 @@ router.post('/register', async (request, response) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
   try {
-    const result = createUser.run(username, passwordHash);
-    sendSession(response, { id: Number(result.lastInsertRowid), username });
+    const result = await database.run(
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id',
+      [username, passwordHash]
+    );
+    sendSession(response, { id: result.lastInsertRowid, username });
   } catch (error) {
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    if (error.code === '23505') {
       return response.status(409).json({ error: 'That username is already in use.' });
     }
     throw error;
@@ -38,7 +39,7 @@ router.post('/register', async (request, response) => {
 router.post('/login', async (request, response) => {
   const username = typeof request.body.username === 'string' ? request.body.username.trim() : '';
   const password = typeof request.body.password === 'string' ? request.body.password : '';
-  const user = findUser.get(username);
+  const user = await database.get('SELECT id, username, password_hash FROM users WHERE username = $1', [username]);
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return response.status(401).json({ error: 'Username or password is incorrect.' });
@@ -46,8 +47,8 @@ router.post('/login', async (request, response) => {
   sendSession(response, user);
 });
 
-router.get('/me', authenticate, (request, response) => {
-  const user = database.prepare('SELECT id, username FROM users WHERE id = ?').get(request.userId);
+router.get('/me', authenticate, async (request, response) => {
+  const user = await database.get('SELECT id, username FROM users WHERE id = $1', [request.userId]);
   if (!user) return response.status(401).json({ error: 'Please log in again.' });
   response.json({ user });
 });

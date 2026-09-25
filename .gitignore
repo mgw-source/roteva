@@ -8,6 +8,3 @@ client/dist/
 # Environment files
 client/.env*
 server/.env*
-
-# Database
-server/data/

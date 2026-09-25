@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import database from './db/database.js';
+import database, { initializeDatabase } from './db/database.js';
 import authRoutes from './routes/auth.js';
 import chatRoutes from './routes/chat.js';
 import attachChatSockets from './sockets/chat.js';
@@ -25,11 +25,12 @@ app.use((error, _request, response, _next) => {
 
 attachChatSockets(io);
 const port = Number(process.env.PORT) || 3001;
+
+await initializeDatabase();
 httpServer.listen(port, () => console.log(`ChatFlow server listening on http://localhost:${port}`));
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   io.close(() => {
-    database.close();
     process.exit(0);
   });
 });
