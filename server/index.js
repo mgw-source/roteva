@@ -26,8 +26,18 @@ app.use((error, _request, response, _next) => {
 attachChatSockets(io);
 const port = Number(process.env.PORT) || 3001;
 
-await initializeDatabase();
-httpServer.listen(port, () => console.log(`ChatFlow server listening on http://localhost:${port}`));
+console.log('Starting server...');
+console.log('CLIENT_URL:', clientUrl);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
+
+try {
+  await initializeDatabase();
+  httpServer.listen(port, () => console.log(`ChatFlow server listening on http://localhost:${port}`));
+} catch (err) {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+}
 
 process.on('SIGINT', async () => {
   io.close(() => {
