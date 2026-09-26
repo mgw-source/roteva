@@ -3,19 +3,18 @@ import 'dotenv/config';
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+const poolConfig = { connectionString: process.env.DATABASE_URL };
+if (process.env.DATABASE_SSL === 'true') poolConfig.ssl = { rejectUnauthorized: false };
+if (process.env.DATABASE_SSL === 'false') poolConfig.ssl = false;
 
-pool.on('error', (err) => {
-  console.error('Unexpected PostgreSQL pool error:', err);
+const pool = new Pool(poolConfig);
+
+pool.on('error', (error) => {
+  console.error('Unexpected PostgreSQL pool error:', error);
 });
 
 export async function initializeDatabase() {
-  console.log('Initializing database...');
-  try {
-    await pool.query(`
+  await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
@@ -40,11 +39,10 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS messages_conversation_created
         ON messages (conversation_id, created_at, id);
     `);
-    console.log('Database initialized successfully');
-  } catch (err) {
-    console.error('Database initialization failed:', err);
-    throw err;
-  }
+}
+
+export function closeDatabase() {
+  return pool.end();
 }
 
 export default {

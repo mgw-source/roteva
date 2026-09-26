@@ -11,8 +11,8 @@ router.get('/users', async (request, response) => {
   const pattern = `%${search.replace(/[!%_]/g, '!$&')}%`;
   const users = await database.all(`
     SELECT id, username FROM users
-    WHERE id != $1 AND username ILIKE $2
-    ORDER BY username LIMIT 20
+    WHERE id != $1 AND username ILIKE $2 ESCAPE '!'
+    ORDER BY LOWER(username) LIMIT 20
   `, [request.userId, pattern]);
   response.json({ users });
 });

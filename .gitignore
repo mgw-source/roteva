@@ -8,3 +8,6 @@ client/dist/
 # Environment files
 client/.env*
 server/.env*
+
+# Legacy local SQLite files (the app now uses PostgreSQL)
+server/data/
