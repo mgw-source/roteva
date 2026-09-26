@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { request } from '../api.js';
 
+const SOCKET_URL = import.meta.env.VITE_API_URL || '';
 const time = (value) => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 const initials = (name) => name.slice(0, 2).toUpperCase();
 
@@ -55,7 +56,7 @@ export default function ChatPage({ token, user, onLogout }) {
   }, [selected, token]);
 
   useEffect(() => {
-    const socket = io({ auth: { token } });
+    const socket = io(SOCKET_URL, { auth: { token } });
     socketRef.current = socket;
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));

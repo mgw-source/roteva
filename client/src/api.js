@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export async function request(path, { token, ...options } = {}) {
   const headers = new Headers(options.headers);
   if (options.body) headers.set('Content-Type', 'application/json');
@@ -5,7 +7,7 @@ export async function request(path, { token, ...options } = {}) {
 
   let response;
   try {
-    response = await fetch(`/api${path}`, { ...options, headers });
+    response = await fetch(`${API_BASE}/api${path}`, { ...options, headers });
   } catch {
     throw new Error('Could not reach ChatFlow. Check that the server is running.');
   }
